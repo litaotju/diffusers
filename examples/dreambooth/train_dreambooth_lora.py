@@ -954,6 +954,7 @@ def main(args):
                     text_encoder=accelerator.unwrap_model(text_encoder),
                     revision=args.revision,
                     torch_dtype=weight_dtype,
+                    requires_safety_checker=False,
                 )
                 pipeline.scheduler = DPMSolverMultistepScheduler.from_config(pipeline.scheduler.config)
                 pipeline = pipeline.to(accelerator.device)
@@ -989,10 +990,15 @@ def main(args):
         unet = unet.to(torch.float32)
         unet.save_attn_procs(args.output_dir)
 
+        del unet
+        del text_encoder
+        del vae
+        torch.cuda.empty_cache()
+
         # Final inference
         # Load previous pipeline
         pipeline = DiffusionPipeline.from_pretrained(
-            args.pretrained_model_name_or_path, revision=args.revision, torch_dtype=weight_dtype
+            args.pretrained_model_name_or_path, revision=args.revision, torch_dtype=weight_dtype, requires_safety_checker=False
         )
         pipeline.scheduler = DPMSolverMultistepScheduler.from_config(pipeline.scheduler.config)
         pipeline = pipeline.to(accelerator.device)
@@ -1011,7 +1017,7 @@ def main(args):
             for tracker in accelerator.trackers:
                 if tracker.name == "tensorboard":
                     np_images = np.stack([np.asarray(img) for img in images])
-                    tracker.writer.add_images("test", np_images, epoch, dataformats="NHWC")
+                    tracker.writer.add_images("test", np_images, args.num_train_epochs, dataformats="NHWC")
                 if tracker.name == "wandb":
                     tracker.log(
                         {
