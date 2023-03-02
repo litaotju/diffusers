@@ -955,6 +955,7 @@ def main(args):
                     revision=args.revision,
                     torch_dtype=weight_dtype,
                     requires_safety_checker=False,
+                    safety_checker=None
                 )
                 pipeline.scheduler = DPMSolverMultistepScheduler.from_config(pipeline.scheduler.config)
                 pipeline = pipeline.to(accelerator.device)
@@ -998,7 +999,8 @@ def main(args):
         # Final inference
         # Load previous pipeline
         pipeline = DiffusionPipeline.from_pretrained(
-            args.pretrained_model_name_or_path, revision=args.revision, torch_dtype=weight_dtype, requires_safety_checker=False
+            args.pretrained_model_name_or_path, revision=args.revision, torch_dtype=weight_dtype, requires_safety_checker=False,
+            safety_checker=None
         )
         pipeline.scheduler = DPMSolverMultistepScheduler.from_config(pipeline.scheduler.config)
         pipeline = pipeline.to(accelerator.device)
